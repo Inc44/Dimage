@@ -23,10 +23,11 @@ def download_media_from_json(
 	download_attachments=True,
 	no_dupes=False,
 	skip="",
+	timestamp_only=False,
 ):
 	if not os.path.exists(input_folder):
 		os.makedirs(input_folder)
-	if not os.path.exists(output_folder):
+	if not timestamp_only and not os.path.exists(output_folder):
 		os.makedirs(output_folder)
 	visited_urls = set()
 	skipped_extensions = {ext.strip().lower() for ext in skip.split(",") if ext.strip()}
@@ -330,6 +331,11 @@ if __name__ == "__main__":
 		default="",
 		help="Skips downloading files with specified comma-separated extensions.",
 	)
+	parser.add_argument(
+		"--timestamp-only",
+		action="store_true",
+		help="Sets timestamps on existing files.",
+	)
 	args = parser.parse_args()
 	download_media_from_json(
 		args.input,
@@ -343,4 +349,5 @@ if __name__ == "__main__":
 		args.attachments,
 		args.no_dupes,
 		args.skip,
+		args.timestamp_only,
 	)
