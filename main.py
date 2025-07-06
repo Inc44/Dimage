@@ -29,15 +29,16 @@ def download_media_from_json(
 	os.makedirs(input_folder, exist_ok=True)
 	if not timestamp_only:
 		os.makedirs(output_folder, exist_ok=True)
-	if organize and not timestamp_only:
+	if organize:
 		icons_path = os.path.join(output_folder, "icons")
 		avatars_path = os.path.join(output_folder, "avatars")
 		emojis_path = os.path.join(output_folder, "emojis")
 		channels_path = os.path.join(output_folder, "channels")
-		os.makedirs(icons_path, exist_ok=True)
-		os.makedirs(avatars_path, exist_ok=True)
-		os.makedirs(emojis_path, exist_ok=True)
-		os.makedirs(channels_path, exist_ok=True)
+		if not timestamp_only:
+			os.makedirs(icons_path, exist_ok=True)
+			os.makedirs(avatars_path, exist_ok=True)
+			os.makedirs(emojis_path, exist_ok=True)
+			os.makedirs(channels_path, exist_ok=True)
 	visited_urls = set()
 	skipped_extensions = {ext.strip().lower() for ext in skip.split(",") if ext.strip()}
 	for filename in os.listdir(input_folder):
