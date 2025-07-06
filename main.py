@@ -217,22 +217,29 @@ def download_media_from_json(
 												media_data.append(
 													(url, timestamp, filename)
 												)
-				if not os.path.exists(output_subfolder):
+				if not timestamp_only and not os.path.exists(output_subfolder):
 					os.makedirs(output_subfolder)
 				for media_url, timestamp_str, file_name in media_data:
 					try:
 						base_path = os.path.join(output_subfolder, file_name)
-						final_path = base_path
-						count = 1
-						while os.path.exists(final_path):
-							name, ext = os.path.splitext(base_path)
-							final_path = f"{name}_{count:03d}{ext}"
-							count += 1
-						response = requests.get(media_url, stream=True)
-						response.raise_for_status()
-						with open(final_path, "wb") as media_file:
-							for chunk in response.iter_content(chunk_size=8192):
-								media_file.write(chunk)
+						final_path = ""
+						if timestamp_only:
+							if os.path.exists(base_path):
+								final_path = base_path
+							else:
+								continue
+						else:
+							final_path = base_path
+							count = 1
+							while os.path.exists(final_path):
+								name, ext = os.path.splitext(base_path)
+								final_path = f"{name}_{count:03d}{ext}"
+								count += 1
+							response = requests.get(media_url, stream=True)
+							response.raise_for_status()
+							with open(final_path, "wb") as media_file:
+								for chunk in response.iter_content(chunk_size=8192):
+									media_file.write(chunk)
 						if timestamp_str:
 							try:
 								timestamp_str = timestamp_str.replace("Z", "+00:00")
@@ -248,7 +255,7 @@ def download_media_from_json(
 								os.utime(final_path, (timestamp, timestamp))
 							except ValueError as e:
 								print(f"Timestamp error '{timestamp_str}': {e}")
-						else:
+						elif not timestamp_only:
 							print(
 								f"Downloaded '{os.path.basename(final_path)}' (no timestamp)."
 							)
