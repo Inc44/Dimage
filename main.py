@@ -39,6 +39,7 @@ def download_media_from_json(
 			os.makedirs(emojis_path, exist_ok=True)
 			os.makedirs(channels_path, exist_ok=True)
 	visited_urls = set()
+	file_use_counter = {}
 	skipped_extensions = {ext.strip().lower() for ext in skip.split(",") if ext.strip()}
 	for filename in os.listdir(input_folder):
 		if filename.endswith(".json"):
@@ -173,7 +174,7 @@ def download_media_from_json(
 													ext = ".png"
 												filename = sanitize_filename(
 													emoji.get("id", "emoji") + ext
-												)  # Use "emoji"
+												)
 												file_ext = os.path.splitext(filename)[
 													1
 												].lower()
@@ -267,32 +268,43 @@ def download_media_from_json(
 						else:
 							target_folder = output_subfolder
 						base_path = os.path.join(target_folder, file_name)
-						final_path = ""
 						if timestamp_only:
-							if os.path.exists(base_path):
-								final_path = base_path
+							use_index = file_use_counter.get(base_path, 0)
+							path_to_check = ""
+							if use_index == 0:
+								path_to_check = base_path
 							else:
-								continue
-						else:
-							final_path = base_path
-							count = 1
-							while os.path.exists(final_path):
 								name, ext = os.path.splitext(base_path)
-								final_path = f"{name}_{count:03d}{ext}"
-								count += 1
-							response = requests.get(media_url, stream=True)
-							response.raise_for_status()
-							with open(final_path, "wb") as media_file:
-								for chunk in response.iter_content(chunk_size=8192):
-									media_file.write(chunk)
+								path_to_check = f"{name}_{use_index:03d}{ext}"
+							file_use_counter[base_path] = use_index + 1
+							if os.path.exists(path_to_check):
+								if timestamp_str:
+									try:
+										dt = parser.parse(timestamp_str)
+										timestamp = dt.timestamp()
+										os.utime(path_to_check, (timestamp, timestamp))
+									except (parser.ParserError, ValueError) as e:
+										print(f"Timestamp error '{timestamp_str}': {e}")
+							continue
+						final_path = base_path
+						count = 1
+						while os.path.exists(final_path):
+							name, ext = os.path.splitext(base_path)
+							final_path = f"{name}_{count:03d}{ext}"
+							count += 1
+						response = requests.get(media_url, stream=True)
+						response.raise_for_status()
+						with open(final_path, "wb") as media_file:
+							for chunk in response.iter_content(chunk_size=8192):
+								media_file.write(chunk)
 						if timestamp_str:
 							try:
 								dt = parser.parse(timestamp_str)
 								timestamp = dt.timestamp()
 								os.utime(final_path, (timestamp, timestamp))
 							except (parser.ParserError, ValueError) as e:
-								print(f"Timestamp error '{timestamp_str}': {e}")
-						elif not timestamp_only:
+								print(f"Timestamp error for '{final_path}': {e}")
+						else:
 							print(
 								f"Downloaded '{os.path.basename(final_path)}' (no timestamp)."
 							)
