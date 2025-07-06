@@ -1,10 +1,10 @@
+from datetime import datetime
+import argparse
 import json
 import os
-import requests
-from datetime import datetime
 import pytz
-import argparse
 import re
+import requests
 
 
 def sanitize_filename(filename):
@@ -24,11 +24,20 @@ def download_media_from_json(
 	no_dupes=False,
 	skip="",
 	timestamp_only=False,
+	organize=False,
 ):
-	if not os.path.exists(input_folder):
-		os.makedirs(input_folder)
-	if not timestamp_only and not os.path.exists(output_folder):
-		os.makedirs(output_folder)
+	os.makedirs(input_folder, exist_ok=True)
+	if not timestamp_only:
+		os.makedirs(output_folder, exist_ok=True)
+	if organize and not timestamp_only:
+		icons_path = os.path.join(output_folder, "icons")
+		avatars_path = os.path.join(output_folder, "avatars")
+		emojis_path = os.path.join(output_folder, "emojis")
+		channels_path = os.path.join(output_folder, "channels")
+		os.makedirs(icons_path, exist_ok=True)
+		os.makedirs(avatars_path, exist_ok=True)
+		os.makedirs(emojis_path, exist_ok=True)
+		os.makedirs(channels_path, exist_ok=True)
 	visited_urls = set()
 	skipped_extensions = {ext.strip().lower() for ext in skip.split(",") if ext.strip()}
 	for filename in os.listdir(input_folder):
@@ -59,7 +68,9 @@ def download_media_from_json(
 						)
 						file_ext = os.path.splitext(filename)[1].lower()
 						if file_ext not in skipped_extensions:
-							media_data.append((url, data.get("exportedAt"), filename))
+							media_data.append(
+								(url, data.get("exportedAt"), filename, "icon")
+							)
 				if "messages" in data:
 					for message in data["messages"]:
 						timestamp = message.get("timestamp")
@@ -82,7 +93,9 @@ def download_media_from_json(
 									)
 									file_ext = os.path.splitext(filename)[1].lower()
 									if file_ext not in skipped_extensions:
-										media_data.append((url, timestamp, filename))
+										media_data.append(
+											(url, timestamp, filename, "avatar")
+										)
 						if download_mentions:
 							if "mentions" in message:
 								for mention in message["mentions"]:
@@ -104,7 +117,7 @@ def download_media_from_json(
 											].lower()
 											if file_ext not in skipped_extensions:
 												media_data.append(
-													(url, timestamp, filename)
+													(url, timestamp, filename, "avatar")
 												)
 						if download_reactions:
 							if "reactions" in message:
@@ -135,7 +148,12 @@ def download_media_from_json(
 														not in skipped_extensions
 													):
 														media_data.append(
-															(url, timestamp, filename)
+															(
+																url,
+																timestamp,
+																filename,
+																"avatar",
+															)
 														)
 						if download_reactions_emojis:
 							if "reactions" in message:
@@ -161,7 +179,12 @@ def download_media_from_json(
 												].lower()
 												if file_ext not in skipped_extensions:
 													media_data.append(
-														(url, timestamp, filename)
+														(
+															url,
+															timestamp,
+															filename,
+															"emoji",
+														)
 													)
 						if download_inline_emojis:
 							if "inlineEmojis" in message:
@@ -189,7 +212,7 @@ def download_media_from_json(
 											].lower()
 											if file_ext not in skipped_extensions:
 												media_data.append(
-													(url, timestamp, filename)
+													(url, timestamp, filename, "emoji")
 												)
 						if download_attachments:
 							if "attachments" in message:
@@ -215,13 +238,35 @@ def download_media_from_json(
 											].lower()
 											if file_ext not in skipped_extensions:
 												media_data.append(
-													(url, timestamp, filename)
+													(
+														url,
+														timestamp,
+														filename,
+														"attachment",
+													)
 												)
-				if not timestamp_only and not os.path.exists(output_subfolder):
-					os.makedirs(output_subfolder)
-				for media_url, timestamp_str, file_name in media_data:
+				if not organize and not timestamp_only:
+					os.makedirs(output_subfolder, exist_ok=True)
+				for media_url, timestamp_str, file_name, media_type in media_data:
 					try:
-						base_path = os.path.join(output_subfolder, file_name)
+						target_folder = ""
+						if organize:
+							if media_type == "icon":
+								target_folder = icons_path
+							elif media_type == "avatar":
+								target_folder = avatars_path
+							elif media_type == "emoji":
+								target_folder = emojis_path
+							elif media_type == "attachment":
+								channel_specific_path = os.path.join(
+									channels_path, sanitize_filename(json_filename)
+								)
+								if not timestamp_only:
+									os.makedirs(channel_specific_path, exist_ok=True)
+								target_folder = channel_specific_path
+						else:
+							target_folder = output_subfolder
+						base_path = os.path.join(target_folder, file_name)
 						final_path = ""
 						if timestamp_only:
 							if os.path.exists(base_path):
@@ -277,71 +322,76 @@ if __name__ == "__main__":
 		"-i",
 		"--input",
 		default="json",
-		help="Specifies the input directory containing `.json` files. Default: `json`.",
+		help="Path to the input directory containing `.json` files. Default: `json`.",
 	)
 	parser.add_argument(
 		"-o",
 		"--output",
 		default="downloads",
-		help="Specifies the root output directory for downloads. Default: `downloads`.",
+		help="Path to the root output directory for downloads. Default: `downloads`.",
 	)
 	parser.add_argument(
 		"--no-guild-icon",
 		action="store_false",
 		dest="guild_icon",
-		help="Disables downloading the guild/server icon.",
+		help="Skip downloading the guild/server icon.",
 	)
 	parser.add_argument(
 		"--no-avatars",
 		action="store_false",
 		dest="avatars",
-		help="Disables downloading message author avatars.",
+		help="Skip downloading message author avatars.",
 	)
 	parser.add_argument(
 		"--no-mentions",
 		action="store_false",
 		dest="mentions",
-		help="Disables downloading avatars of mentioned users.",
+		help="Skip downloading avatars of mentioned users.",
 	)
 	parser.add_argument(
 		"--no-reactions",
 		action="store_false",
 		dest="reactions",
-		help="Disables downloading avatars of users who added a reaction.",
+		help="Skip downloading avatars of users who reacted.",
 	)
 	parser.add_argument(
 		"--no-reactions-emojis",
 		action="store_false",
 		dest="reactions_emojis",
-		help="Disables downloading custom emojis used in reactions.",
+		help="Skip downloading custom emojis used in reactions.",
 	)
 	parser.add_argument(
 		"--no-inline-emojis",
 		action="store_false",
 		dest="inline_emojis",
-		help="Disables downloading custom emojis used inline in messages.",
+		help="Skip downloading custom emojis used inline in messages.",
 	)
 	parser.add_argument(
 		"--no-attachments",
 		action="store_false",
 		dest="attachments",
-		help="Disables downloading message attachments.",
+		help="Skip downloading message attachments.",
 	)
 	parser.add_argument(
 		"--no-dupes",
 		action="store_true",
-		help="Disables downloading duplicate files",
+		help="Avoid downloading duplicate files.",
 	)
 	parser.add_argument(
 		"--skip",
 		type=str,
 		default="",
-		help="Skips downloading files with specified comma-separated extensions.",
+		help="Skip files with specified comma-separated extensions.",
 	)
 	parser.add_argument(
 		"--timestamp-only",
 		action="store_true",
-		help="Sets timestamps on existing files.",
+		help="Set timestamps on existing files without downloading.",
+	)
+	parser.add_argument(
+		"--organize",
+		action="store_true",
+		help="Organize files into categories: `icons`, `avatars`, `emojis`, and `channels` (for attachments).",
 	)
 	args = parser.parse_args()
 	download_media_from_json(
@@ -357,4 +407,5 @@ if __name__ == "__main__":
 		args.no_dupes,
 		args.skip,
 		args.timestamp_only,
+		args.organize,
 	)
