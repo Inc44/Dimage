@@ -48,18 +48,16 @@ cd Dimage
 ```
 
 To install the package:
-
 ```bash
 pip install .
 ```
 
 To install only the dependencies:
-
 ```bash
 pip install -r requirements.txt
 ```
 
-_If you install only the dependencies, run the program using `python -OO main.py` instead of the `dimage` command._
+_If you install only the dependencies, run the program using `python -m dimage.cli` (or `python -OO dimage/cli.py`) instead of the `dimage` command._
 
 ## 🛠️ Build
 ```bash
@@ -82,9 +80,9 @@ dimage --no-dupes --skip svg --organize
 ```
 
 ### Update Timestamps Only
-Apply original timestamps to already downloaded files. Assumes files are in an organized structure. No new files will be downloaded.
+Apply original timestamps to already downloaded files. Assumes files are in an organized structure. No new files will be downloaded. Displays info and warnings.
 ```bash
-dimage --no-dupes --skip svg --timestamp-only --organize
+dimage --no-dupes --skip svg --timestamp-only --organize --loglevel info
 ```
 
 ### Attachments Only
@@ -92,25 +90,26 @@ Download only message attachments, skipping all other media types, duplicates, a
 ```bash
 dimage --no-guild-icon --no-avatars --no-mentions --no-reactions --no-reactions-emojis --no-inline-emojis --no-dupes --skip svg
 ```
-_I prefer to skip SVG files, as in 99.99% of cases, they are just Discord's standard emojis._
+_I prefer to skip SVG files, as in 99.99% of cases, they are just standard Discord emojis._
 
 ## 🎨 Command-Line Arguments
 
-| Argument                | Description                                                                                     |
-|-------------------------|-------------------------------------------------------------------------------------------------|
-| `-i, --input <path>`    | Path to the input directory containing `.json` files. Default: `json`.                          |
-| `-o, --output <path>`   | Path to the root output directory for downloads. Default: `downloads`.                          |
-| `--no-guild-icon`       | Skip downloading the guild/server icon.                                                         |
-| `--no-avatars`          | Skip downloading message author avatars.                                                        |
-| `--no-mentions`         | Skip downloading avatars of mentioned users.                                                    |
-| `--no-reactions`        | Skip downloading avatars of users who reacted.                                                  |
-| `--no-reactions-emojis` | Skip downloading custom emojis used in reactions.                                               |
-| `--no-inline-emojis`    | Skip downloading custom emojis used inline in messages.                                         |
-| `--no-attachments`      | Skip downloading message attachments.                                                           |
-| `--no-dupes`            | Avoid downloading duplicate files based on URL.                                                 |
-| `--skip <exts>`         | Skip files with specified comma-separated extensions.                                           |
-| `--timestamp-only`      | Set timestamps on existing files without downloading.                                           |
-| `--organize`            | Organize files into categories: `icons`, `avatars`, `emojis`, and `channels` (for attachments). |
+| Argument                | Description                                                                                          |
+|-------------------------|------------------------------------------------------------------------------------------------------|
+| `-i, --input <path>`    | Path to the input directory containing `.json` files. Default: `json`.                               |
+| `-o, --output <path>`   | Path to the root output directory for downloads. Default: `downloads`.                               |
+| `--no-guild-icon`       | Skip downloading the guild/server icon.                                                              |
+| `--no-avatars`          | Skip downloading message author avatars.                                                             |
+| `--no-mentions`         | Skip downloading avatars of mentioned users.                                                         |
+| `--no-reactions`        | Skip downloading avatars of users who reacted.                                                       |
+| `--no-reactions-emojis` | Skip downloading custom emojis used in reactions.                                                    |
+| `--no-inline-emojis`    | Skip downloading custom emojis used inline in messages.                                              |
+| `--no-attachments`      | Skip downloading message attachments.                                                                |
+| `--no-dupes`            | Avoid downloading duplicate files based on URL.                                                      |
+| `--skip <exts>`         | Skip files with specified comma-separated extensions.                                                |
+| `--timestamp-only`      | Set timestamps on existing files without downloading.                                                |
+| `--organize`            | Organize files into categories: `icons`, `avatars`, `emojis`, and `channels` (for attachments).      |
+| `--loglevel <level>`    | Set the logging level (`NOTSET`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Default: `ERROR`. |
 
 ## 📜 License
 

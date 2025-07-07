@@ -1,4 +1,6 @@
-dimage*/**/*
+**/__pycache__/**/*
+build/**/*
+dimage.egg-info/**/*
 dist/**/*
 downloads/**/*
 json/**/*
