@@ -65,6 +65,12 @@ pip install build
 python -m build
 ```
 
+## 📦 Publish
+```bash
+pip install twine
+twine upload dist/*
+```
+
 ## 📖 Usage Examples
 
 ### Standard Download
