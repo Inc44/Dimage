@@ -136,7 +136,7 @@ def main() -> None:
 		type=str.upper,
 		choices=["NOTSET", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
 		default="ERROR",
-		help="Set the logging level. Default: INFO.",
+		help="Set the logging level. Default: ERROR.",
 	)
 	args = arg_parser.parse_args()
 	logging.basicConfig(level=args.loglevel, format="%(levelname)s: %(message)s")
