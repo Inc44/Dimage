@@ -28,8 +28,5 @@ Issues = "https://github.com/Inc44/Dimage/issues"
 [project.scripts]
 dimage = "main:main"
 
-[project.optional-dependencies]
-test = ["pytest"]
-
 [tool.setuptools]
 py-modules = ["main"]
