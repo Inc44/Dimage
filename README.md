@@ -111,6 +111,13 @@ _I prefer to skip SVG files, as in 99.99% of cases, they are just standard Disco
 | `--organize`            | Organize files into categories: `icons`, `avatars`, `emojis`, and `channels` (for attachments).      |
 | `--loglevel <level>`    | Set the logging level (`NOTSET`, `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`). Default: `ERROR`. |
 
+## 🚧 TODO
+
+- [ ] **Refactor for Concurrency**: Re-architect the download logic using `asyncio` and `aiohttp` to replace the current sequential, blocking `requests` implementation. This will significantly improve performance.
+- [ ] **Implement Persistent Cache**: Replace the in-memory `visited_urls` set with a persistent on-disk cache (e.g., a simple database or a state file). This will allow the application to be stopped and resumed, prevent redundant downloads, and enable recovery from interruptions.
+- [ ] **Add Robust Retry Logic**: Integrate a library such as `tenacity` or `retrying` into the download function to automatically handle transient network errors, timeouts, and HTTP 429 (Too Many Requests) status codes with exponential backoff.
+- [ ] **Establish Formal Testing**: Develop a formal test suite using `pytest`. Implement mocking for network requests to test application logic without relying on expiring Discord URLs. Add `coverage` to measure test effectiveness and identify untested code paths.
+
 ## 📜 License
 
 [![MIT](https://img.shields.io/badge/License-MIT-lightgrey.svg)](https://opensource.org/licenses/MIT)
