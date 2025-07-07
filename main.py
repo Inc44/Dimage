@@ -255,12 +255,13 @@ def extract_media_from_json(
 	return media_data
 
 
-def download_file(url: str, path: str) -> None:
+def download_file(url: str, path: str) -> bool:
 	"""
 	Downloads a file from a URL and saves it to a specified path.
 
 	:param url: The URL of the file to download.
 	:param path: The local file path to save the content to.
+	:return: True on success, False on failure.
 	"""
 	try:
 		response = requests.get(url, stream=True)
@@ -268,8 +269,17 @@ def download_file(url: str, path: str) -> None:
 		with open(path, "wb") as media_file:
 			for chunk in response.iter_content(chunk_size=8192):
 				media_file.write(chunk)
+		return True
+	except requests.exceptions.HTTPError as e:
+		print(
+			f"Error: HTTP {e.response.status_code} {e.response.reason} for URL: {url}",
+			file=sys.stderr,
+		)
 	except requests.exceptions.RequestException as e:
-		print(f"Download error '{url}': {e}", file=sys.stderr)
+		print(f"Error: Could not download '{url}': {e}", file=sys.stderr)
+	except IOError as e:
+		print(f"Error: Could not write to file '{path}': {e}", file=sys.stderr)
+	return False
 
 
 def process_media_item(
@@ -317,6 +327,11 @@ def process_media_item(
 		file_use_counter[base_path] = use_index + 1
 		if os.path.exists(path_to_check):
 			set_timestamp(path_to_check, timestamp_str)
+		else:
+			print(
+				f"Warning: Skipping timestamp for non-existent file: {path_to_check}",
+				file=sys.stderr,
+			)
 		return
 	final_path = base_path
 	count = 1
@@ -324,11 +339,8 @@ def process_media_item(
 		name, ext = os.path.splitext(base_path)
 		final_path = f"{name}_{count:03d}{ext}"
 		count += 1
-	try:
-		download_file(media_url, final_path)
+	if download_file(media_url, final_path):
 		set_timestamp(final_path, timestamp_str)
-	except OSError as e:
-		print(f"File error '{file_name}': {e}", file=sys.stderr)
 
 
 def set_timestamp(file_path: str, timestamp_str: Optional[str]) -> None:
@@ -345,7 +357,11 @@ def set_timestamp(file_path: str, timestamp_str: Optional[str]) -> None:
 		timestamp = dt.timestamp()
 		os.utime(file_path, (timestamp, timestamp))
 	except (parser.ParserError, ValueError) as e:
-		print(f"Timestamp error for '{file_path}': {e}", file=sys.stderr)
+		print(
+			f"Error: Could not parse timestamp for '{file_path}': {e}", file=sys.stderr
+		)
+	except OSError as e:
+		print(f"Error: Could not set timestamp for '{file_path}': {e}", file=sys.stderr)
 
 
 def run(config: Config) -> None:
@@ -371,11 +387,17 @@ def run(config: Config) -> None:
 			media_to_process = extract_media_from_json(data, config, visited_urls)
 			for item in media_to_process:
 				process_media_item(item, config, paths, json_filename, file_use_counter)
-		except (FileNotFoundError, json.JSONDecodeError) as e:
-			print(f"Error processing file '{filename}': {e}", file=sys.stderr)
+		except FileNotFoundError:
+			print(f"Error: Input file not found: '{filepath}'", file=sys.stderr)
+		except json.JSONDecodeError as e:
+			print(
+				f"Error: Could not parse '{filename}'. The file may be corrupt or not valid JSON. Details: {e}",
+				file=sys.stderr,
+			)
 		except IOError as e:
 			print(
-				f"An I/O error occurred processing '{filename}': {e}", file=sys.stderr
+				f"Error: An I/O error occurred while processing '{filename}': {e}",
+				file=sys.stderr,
 			)
 
 
