@@ -92,6 +92,7 @@ twine upload dist/*
 ## 📖 Usage Examples
 
 ### Standard Download
+
 Download all media, skipping duplicates and SVG files. Media will be organized into folders named after each channel. Assumes your JSON files are in a directory named `json`.
 ```bash
 dimage --no-dupes --skip svg
